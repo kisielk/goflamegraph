@@ -14,7 +14,7 @@ func foldStack(s Stack) string {
 	return strings.Join(calls, ";")
 }
 
-func foldStacks(stacks []*Stack) []string {
+func FoldStacks(stacks []*Stack) []string {
 	counts := make(map[string]int)
 	for _, s := range stacks {
 		folded := foldStack(*s)

@@ -8,12 +8,12 @@ import (
 )
 
 func main() {
-	stacks, err := flamegraph.parseStacks(os.Stdin)
+	stacks, err := flamegraph.ParseStacks(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, line := range flamegraph.foldStacks(stacks) {
+	for _, line := range flamegraph.FoldStacks(stacks) {
 		fmt.Println(line)
 	}
 }

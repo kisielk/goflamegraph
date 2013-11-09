@@ -18,7 +18,7 @@ type Stack struct {
 	Calls     []Call
 }
 
-func parseStacks(r io.Reader) ([]*Stack, error) {
+func ParseStacks(r io.Reader) ([]*Stack, error) {
 	var stacks []*Stack
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
