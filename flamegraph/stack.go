@@ -1,5 +1,5 @@
 // The code in this file is from https://code.google.com/p/rog-go/source/browse/cmd/stackgraph/stackgraph.go
-package main
+package flamegraph
 
 import (
 	"bufio"
