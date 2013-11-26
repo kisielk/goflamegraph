@@ -1,7 +1,6 @@
 package flamegraph
 
 import (
-	"fmt"
 	"html/template"
 	"sort"
 )
@@ -62,12 +61,6 @@ var funcMap = template.FuncMap{
 		}
 		return a / b
 	},
-}
-
-type color struct{ r, g, b int }
-
-func (c color) String() string {
-	return fmt.Sprintf("rgb(%d, %d, %d)", c.r, c.g, c.b)
 }
 
 // stackLess returns true if stack a is "less than" stack b.
