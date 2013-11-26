@@ -2,33 +2,67 @@ package flamegraph
 
 import (
 	"fmt"
+	"html/template"
 	"sort"
 )
 
-const svgTemplate = `<?xml version="1.0" standalone="no"?>
+const svg = `
+<?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" width="{{width}}" height="{{height}}" onload="init(evt)" viewBox="0 0 {{width}} {{height}}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<defs>
-        <linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
-                <stop stop-color="{{bgColor1}}" offset="5%" />
-                <stop stop-color="{{bgColor2}}" offset="95%" />
-        </linearGradient>
+<svg version="1.1" width="{{.Width}}" height="{{.Height}}" onload="init(evt)" viewBox="0 0 {{.Width}} {{.Height}}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<defs >
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
+		<stop stop-color="{{.BgColor1}}" offset="5%" />
+		<stop stop-color="{{.BgColor2}}" offset="95%" />
+	</linearGradient>
 </defs>
 <style type="text/css">
-        .func_g:hover { stroke:black; stroke-width:0.5; }
+	.func_g:hover { stroke:black; stroke-width:0.5; }
 </style>
 <script type="text/ecmascript">
 <![CDATA[
-        var details;
-        function init(evt) { details = document.getElementById("details").firstChild; }
-        function s(info) { details.nodeValue = "$nametype " + info; }
-        function c() { details.nodeValue = ' '; }
+	var details;
+	function init(evt) { details = document.getElementById("details").firstChild; }
+	function s(info) { details.nodeValue = "$nametype " + info; }
+	function c() { details.nodeValue = ' '; }
 ]]>
 </script>
-<rect x="0" y="0" width="{{width}}" height="{{height}}" fill="{{background}}" />
-
+<rect x="0" y="0" width="{{.Width}}" height="{{.Height}}" fill="url(#background)"/>
+<text text-anchor="middle" x="{{.Width | div 2}}" y="{{.FontSize | mul 2}}" font-size="{{.FontSize}}" font-family="{{.FontFamily}}" fill="rgb(0,0,0)">
+{{.Title}}
+</text>
+{{range .Funcs}}
+<g class="func_g" onmouseover="s('{{.Info}}')" onmouseout="c()">
+<title>{{.Info}}</title><rect x="144.1" y="209" width="1019.1" height="15.0" fill="rgb(215,143,50)" rx="2" ry="2" />
+<text text-anchor="" x="147.090909090909" y="219.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)">{{.Name}}</text>
+</g>
+{{end}}
 </svg>
 `
+
+type Args struct {
+	Width, Height      int
+	BgColor1, BgColor2 string
+	FontSize           float64
+	FontFamily         string
+	Title              string
+	Funcs              []Func
+}
+
+type Func struct {
+	Info, Name   string
+	Etime, Stime float64
+}
+
+var funcMap = template.FuncMap{
+	"mul": func(a, b int) int { return a * b },
+	"div": func(a, b int) int {
+		if b == 0 {
+			return 0
+		}
+		return a / b
+	},
+}
 
 type color struct{ r, g, b int }
 
