@@ -15,6 +15,7 @@ type Call struct {
 
 type Stack struct {
 	Goroutine int
+	State     string
 	Calls     []Call
 }
 
@@ -24,7 +25,7 @@ func ParseStacks(r io.Reader) ([]*Stack, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		stack := &Stack{}
-		if n, _ := fmt.Sscanf(line, "goroutine %d", &stack.Goroutine); n != 1 {
+		if n, _ := fmt.Sscanf(line, "goroutine %d [%s]", &stack.Goroutine, &stack.State); n != 2 {
 			continue
 		}
 		for scanner.Scan() {
