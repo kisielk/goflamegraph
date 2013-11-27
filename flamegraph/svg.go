@@ -2,6 +2,7 @@ package flamegraph
 
 import (
 	"html/template"
+	"io"
 	"sort"
 )
 
@@ -27,7 +28,7 @@ const svg = `
 ]]>
 </script>
 <rect x="0" y="0" width="{{.Width}}" height="{{.Height}}" fill="url(#background)"/>
-<text text-anchor="middle" x="{{.Width | div 2}}" y="{{.FontSize | mul 2}}" font-size="{{.FontSize}}" font-family="{{.FontFamily}}" fill="rgb(0,0,0)">
+<text text-anchor="middle" x="{{.Width | div 2}}" y="{{.FontSize | mulFloat 2}}" font-size="{{.FontSize}}" font-family="{{.FontFamily}}" fill="rgb(0,0,0)">
 {{.Title}}
 </text>
 {{range .Funcs}}
@@ -38,6 +39,8 @@ const svg = `
 {{end}}
 </svg>
 `
+
+var svgTemplate = template.Must(template.New("SVG").Funcs(funcMap).Parse(svg))
 
 type Args struct {
 	Width, Height      int
@@ -54,7 +57,8 @@ type Func struct {
 }
 
 var funcMap = template.FuncMap{
-	"mul": func(a, b int) int { return a * b },
+	"mulFloat": func(a, b float64) float64 { return a * b },
+	"mul":      func(a, b int) int { return a * b },
 	"div": func(a, b int) int {
 		if b == 0 {
 			return 0
@@ -142,4 +146,17 @@ func do(t traces) {
 
 func flow(prev, curr *Stack, totalSamples int) {
 
+}
+
+func RenderSVG(w io.Writer) error {
+	args := Args{
+		Width:      970,
+		Height:     640,
+		BgColor1:   "black",
+		BgColor2:   "blue",
+		FontFamily: "Helvetica",
+		FontSize:   10,
+		Title:      "Something",
+	}
+	return svgTemplate.Execute(w, args)
 }
