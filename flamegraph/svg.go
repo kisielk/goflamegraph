@@ -129,23 +129,68 @@ func (t traces) Less(i, j int) bool {
 	return stackLess(t[i].stack, t[j].stack)
 }
 
+const minWidthTime = 1
+
 func do(t traces) {
+	tmp := make(map[tmpkey]int)
+	nodes := make(map[key]int)
+
 	sort.Sort(t)
 	var prev *Stack
 	var totalSamples int
+	var maxDepth int
 	for _, trace := range t {
 		if trace.samples <= 0 {
 			continue
 		}
 
-		flow(prev, trace.stack, totalSamples)
+		flow(tmp, nodes, prev, trace.stack, totalSamples)
 		prev = trace.stack
 		totalSamples += trace.samples
 	}
+
+	for key, startTime := range nodes {
+		if key.EndTime-startTime < minWidthTime {
+			delete(nodes, key)
+			continue
+		}
+		if key.Depth > maxDepth {
+			maxDepth = key.Depth
+		}
+	}
 }
 
-func flow(prev, curr *Stack, totalSamples int) {
+type tmpkey struct {
+	Call  Call
+	Depth int
+}
 
+type key struct {
+	Call    Call
+	Depth   int
+	EndTime int
+}
+
+func flow(tmp map[tmpkey]int, nodes map[key]int, prev, this *Stack, totalSamples int) {
+	var same int
+	var i int
+	for i = 0; i < len(prev.Calls) && i < len(this.Calls); i++ {
+		if prev.Calls[i] != this.Calls[i] {
+			break
+		}
+	}
+	same = i
+
+	for i := len(prev.Calls) - 1; i >= same; i-- {
+		k := tmpkey{prev.Calls[i], i}
+		nodes[key{k.Call, k.Depth, totalSamples}] = tmp[k]
+		delete(tmp, k)
+	}
+
+	for i := same; i < len(this.Calls); i++ {
+		k := tmpkey{this.Calls[i], i}
+		tmp[k] = totalSamples
+	}
 }
 
 func RenderSVG(w io.Writer) error {
