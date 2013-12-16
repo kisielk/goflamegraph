@@ -132,7 +132,7 @@ func (t traces) Less(i, j int) bool {
 const minWidthTime = 1
 
 func do(t traces) {
-	tmp := make(map[tmpkey]int)
+	tmp := make(map[key]int)
 	nodes := make(map[key]int)
 
 	sort.Sort(t)
@@ -160,18 +160,13 @@ func do(t traces) {
 	}
 }
 
-type tmpkey struct {
-	Call  Call
-	Depth int
-}
-
 type key struct {
 	Call    Call
 	Depth   int
 	EndTime int
 }
 
-func flow(tmp map[tmpkey]int, nodes map[key]int, prev, this *Stack, totalSamples int) {
+func flow(tmp map[key]int, nodes map[key]int, prev, this *Stack, totalSamples int) {
 	var same int
 	var i int
 	for i = 0; i < len(prev.Calls) && i < len(this.Calls); i++ {
@@ -182,13 +177,13 @@ func flow(tmp map[tmpkey]int, nodes map[key]int, prev, this *Stack, totalSamples
 	same = i
 
 	for i := len(prev.Calls) - 1; i >= same; i-- {
-		k := tmpkey{prev.Calls[i], i}
+		k := key{Call: prev.Calls[i], Depth: i}
 		nodes[key{k.Call, k.Depth, totalSamples}] = tmp[k]
 		delete(tmp, k)
 	}
 
 	for i := same; i < len(this.Calls); i++ {
-		k := tmpkey{this.Calls[i], i}
+		k := key{Call: this.Calls[i], Depth: i}
 		tmp[k] = totalSamples
 	}
 }
