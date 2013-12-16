@@ -31,7 +31,7 @@ const svg = `
 <text text-anchor="middle" x="{{.Width | div 2}}" y="{{.FontSize | mulFloat 2}}" font-size="{{.FontSize}}" font-family="{{.FontFamily}}" fill="rgb(0,0,0)">
 {{.Title}}
 </text>
-{{range .Funcs}}
+{{range $func, $depth := .Nodes}}
 <g class="func_g" onmouseover="s('{{.Info}}')" onmouseout="c()">
 <title>{{.Info}}</title><rect x="144.1" y="209" width="1019.1" height="15.0" fill="rgb(215,143,50)" rx="2" ry="2" />
 <text text-anchor="" x="147.090909090909" y="219.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)">{{.Name}}</text>
@@ -48,7 +48,7 @@ type Args struct {
 	FontSize           float64
 	FontFamily         string
 	Title              string
-	Funcs              []Func
+	Nodes              map[node]int
 }
 
 type Func struct {
@@ -67,128 +67,71 @@ var funcMap = template.FuncMap{
 	},
 }
 
-// stackLess returns true if stack a is "less than" stack b.
-func stackLess(a, b *Stack) bool {
-	ca := a.Calls
-	cb := b.Calls
-	for x := 0; x < len(ca) && x < len(cb); x++ {
-		cas := ca[x].Source
-		cbs := cb[x].Source
-		if cas < cbs {
-			return true
-		} else if cas > cbs {
-			return false
-		}
-
-		caf := ca[x].Func
-		cbf := cb[x].Func
-		if caf < cbf {
-			return true
-		} else if caf > cbf {
-			return false
-		}
-
-		// The functions at the current level of the stacks are equal, continue.
-	}
-
-	// If we reach here, then all the functions have been equal at all levels inspected.
-	// Check if one of the stacks is smaller than the other.
-	return len(ca) < len(cb)
-}
-
-type stacks []*Stack
-
-func (s stacks) Len() int {
-	return len(s)
-}
-
-func (s stacks) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-
-func (s stacks) Less(i, j int) bool {
-	return stackLess(s[i], s[j])
-}
-
-type trace struct {
-	stack   *Stack
-	samples int
-}
-
-type traces []trace
-
-func (t traces) Len() int {
-	return len(t)
-}
-
-func (t traces) Swap(i, j int) {
-	t[i], t[j] = t[j], t[i]
-}
-
-func (t traces) Less(i, j int) bool {
-	return stackLess(t[i].stack, t[j].stack)
-}
-
 const minWidthTime = 1
 
-func do(t traces) {
-	tmp := make(map[key]int)
-	nodes := make(map[key]int)
+func makeNodes(t traces) map[node]int {
+	tmp := make(map[node]int)
+	nodes := make(map[node]int)
 
 	sort.Sort(t)
-	var prev *Stack
+	var prev []Call
 	var totalSamples int
-	var maxDepth int
 	for _, trace := range t {
 		if trace.samples <= 0 {
 			continue
 		}
 
-		flow(tmp, nodes, prev, trace.stack, totalSamples)
-		prev = trace.stack
+		curr := trace.stack.Calls
+		flow(tmp, nodes, prev, curr, totalSamples)
+		prev = curr
 		totalSamples += trace.samples
 	}
 
-	for key, startTime := range nodes {
-		if key.EndTime-startTime < minWidthTime {
-			delete(nodes, key)
+	// Prune nodes that are too narrow, find maximum depth.
+	var maxDepth int
+	for node, startTime := range nodes {
+		if node.EndTime-startTime < minWidthTime {
+			delete(nodes, node)
 			continue
 		}
-		if key.Depth > maxDepth {
-			maxDepth = key.Depth
+		if node.Depth > maxDepth {
+			maxDepth = node.Depth
 		}
 	}
+
+	return nodes
 }
 
-type key struct {
+type node struct {
 	Call    Call
 	Depth   int
 	EndTime int
 }
 
-func flow(tmp map[key]int, nodes map[key]int, prev, this *Stack, totalSamples int) {
+func flow(tmp map[node]int, nodes map[node]int, prev, this []Call, totalSamples int) {
 	var same int
 	var i int
-	for i = 0; i < len(prev.Calls) && i < len(this.Calls); i++ {
-		if prev.Calls[i] != this.Calls[i] {
+	for i = 0; i < len(prev) && i < len(this); i++ {
+		if prev[i] != this[i] {
 			break
 		}
 	}
 	same = i
 
-	for i := len(prev.Calls) - 1; i >= same; i-- {
-		k := key{Call: prev.Calls[i], Depth: i}
-		nodes[key{k.Call, k.Depth, totalSamples}] = tmp[k]
+	for i := len(prev) - 1; i >= same; i-- {
+		k := node{Call: prev[i], Depth: i}
+		nodes[node{k.Call, k.Depth, totalSamples}] = tmp[k]
 		delete(tmp, k)
 	}
 
-	for i := same; i < len(this.Calls); i++ {
-		k := key{Call: this.Calls[i], Depth: i}
+	for i := same; i < len(this); i++ {
+		k := node{Call: this[i], Depth: i}
 		tmp[k] = totalSamples
 	}
 }
 
-func RenderSVG(w io.Writer) error {
+func RenderSVG(w io.Writer, t traces) error {
+	nodes := makeNodes(t)
 	args := Args{
 		Width:      970,
 		Height:     640,
@@ -197,6 +140,7 @@ func RenderSVG(w io.Writer) error {
 		FontFamily: "Helvetica",
 		FontSize:   10,
 		Title:      "Something",
+		Nodes:      nodes,
 	}
 	return svgTemplate.Execute(w, args)
 }

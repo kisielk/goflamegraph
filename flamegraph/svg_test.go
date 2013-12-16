@@ -34,3 +34,21 @@ func TestSort(t *testing.T) {
 		}
 	}
 }
+
+func TestDo(t *testing.T) {
+	calls := [][]Call{
+		{{"a", "a"}, {"a", "b"}},
+		{{"b", "a"}, {"a", "a"}},
+		{{"a", "a"}},
+		{{"a", "b"}, {"a", "a"}},
+	}
+
+	tr := make(traces, len(calls))
+	for i, c := range calls {
+		tr[i] = trace{&Stack{Calls: c}, i}
+	}
+
+	nodes := makeNodes(tr)
+	//TODO test that nodes is correct.
+	t.Log(nodes)
+}

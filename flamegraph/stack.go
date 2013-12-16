@@ -91,3 +91,65 @@ func FoldStacks(stacks []*Stack) []string {
 	sort.Strings(lines)
 	return lines
 }
+
+// stackLess returns true if stack a is "less than" stack b.
+func stackLess(a, b *Stack) bool {
+	ca := a.Calls
+	cb := b.Calls
+	for x := 0; x < len(ca) && x < len(cb); x++ {
+		cas := ca[x].Source
+		cbs := cb[x].Source
+		if cas < cbs {
+			return true
+		} else if cas > cbs {
+			return false
+		}
+
+		caf := ca[x].Func
+		cbf := cb[x].Func
+		if caf < cbf {
+			return true
+		} else if caf > cbf {
+			return false
+		}
+
+		// The functions at the current level of the stacks are equal, continue.
+	}
+
+	// If we reach here, then all the functions have been equal at all levels inspected.
+	// Check if one of the stacks is smaller than the other.
+	return len(ca) < len(cb)
+}
+
+type stacks []*Stack
+
+func (s stacks) Len() int {
+	return len(s)
+}
+
+func (s stacks) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s stacks) Less(i, j int) bool {
+	return stackLess(s[i], s[j])
+}
+
+type trace struct {
+	stack   *Stack
+	samples int
+}
+
+type traces []trace
+
+func (t traces) Len() int {
+	return len(t)
+}
+
+func (t traces) Swap(i, j int) {
+	t[i], t[j] = t[j], t[i]
+}
+
+func (t traces) Less(i, j int) bool {
+	return stackLess(t[i].stack, t[j].stack)
+}
