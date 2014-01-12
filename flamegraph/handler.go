@@ -28,15 +28,15 @@ func FlameGraph(w http.ResponseWriter, r *http.Request) {
 	ticker := time.NewTicker(1 * time.Second / time.Duration(freq))
 	timeout := time.NewTimer(time.Duration(sec) * time.Second)
 	var stacks [][]byte
+	buf := make([]byte, size)
 loop:
 	for {
 		select {
 		case <-ticker.C:
 		tick:
-			buf := make([]byte, size)
 			n := runtime.Stack(buf, true)
 			if n == size {
-				size *= 2
+				buf = make([]byte, len(buf)*2)
 				goto tick
 			}
 			stacks = append(stacks, buf[:n])
