@@ -28,17 +28,23 @@ const svg = `
 ]]>
 </script>
 <rect x="0" y="0" width="{{.Width}}" height="{{.Height}}" fill="url(#background)"/>
-<text text-anchor="middle" x="{{.Width | div 2}}" y="{{.FontSize | mulFloat 2}}" font-size="{{.FontSize}}" font-family="{{.FontFamily}}" fill="rgb(0,0,0)">
+<text text-anchor="middle" x="{{.Width | div 2}}" y="{{.FontSize | Mul 2.0}}" font-size="{{.FontSize}}" font-family="{{.FontFamily}}" fill="rgb(0,0,0)">
 {{.Title}}
 </text>
-{{range $func, $depth := .Nodes}}
+{{range .Funcs }}
 <g class="func_g" onmouseover="s('{{.Info}}')" onmouseout="c()">
-<title>{{.Info}}</title><rect x="144.1" y="209" width="1019.1" height="15.0" fill="rgb(215,143,50)" rx="2" ry="2" />
-<text text-anchor="" x="147.090909090909" y="219.5" font-size="12" font-family="Verdana" fill="rgb(0,0,0)">{{.Name}}</text>
+<title>{{.Info}}</title><rect x="{{.X}}" y="{{.Y}}" width="{{.Width}}" height="{{.Height}}" fill="{{.Fill}}" rx="2" ry="2" />
+<text text-anchor="" x="{{.X | Sum 3}}" y="{{.Y | Sum .Y .Width 3}}" font-size="12" font-family="Verdana" fill="rgb(0,0,0)">{{.Name}}</text>
 </g>
 {{end}}
 </svg>
 `
+
+type Func struct {
+	Info                string
+	X, Y, Width, Height float64
+	Fill                string
+}
 
 var svgTemplate = template.Must(template.New("SVG").Funcs(funcMap).Parse(svg))
 
@@ -51,14 +57,21 @@ type Args struct {
 	Nodes              map[node]int
 }
 
-type Func struct {
-	Info, Name   string
-	Etime, Stime float64
-}
-
 var funcMap = template.FuncMap{
-	"mulFloat": func(a, b float64) float64 { return a * b },
-	"mul":      func(a, b int) int { return a * b },
+	"Sum": func(a ...float64) float64 {
+		var x float64
+		for _, n := range a {
+			x += n
+		}
+		return x
+	},
+	"Mul": func(a ...float64) float64 {
+		var x = 1.0
+		for _, n := range a {
+			x *= n
+		}
+		return x
+	},
 	"div": func(a, b int) int {
 		if b == 0 {
 			return 0
