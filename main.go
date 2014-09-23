@@ -9,7 +9,10 @@ import (
 	"github.com/kisielk/goflamegraph/flamegraph"
 )
 
-var html = flag.Bool("html", false, "Generate HTML instead of output for flamegraph.pl")
+var (
+	html          = flag.Bool("html", false, "Generate HTML instead of output for flamegraph.pl")
+	includeSource = flag.Bool("s", false, "Show source paths")
+)
 
 func main() {
 	flag.Parse()
@@ -25,7 +28,7 @@ func main() {
 			log.Fatal(err)
 		}
 	} else {
-		for _, line := range flamegraph.FoldStacks(stacks) {
+		for _, line := range flamegraph.FoldStacks(stacks, *inclueSource) {
 			fmt.Println(line)
 		}
 	}
