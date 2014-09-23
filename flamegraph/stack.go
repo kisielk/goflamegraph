@@ -58,7 +58,11 @@ func ParseStacks(r io.Reader) ([]*Stack, error) {
 			}
 			stack.Calls = append(stack.Calls, call)
 		}
+		// reverse the calls so they're in the right order
 		if len(stack.Calls) > 0 {
+			for i, j := 0, len(stack.Calls)-1; i < j; i, j = i+1, j-1 {
+				stack.Calls[i], stack.Calls[j] = stack.Calls[j], stack.Calls[i]
+			}
 			stacks = append(stacks, stack)
 		}
 	}

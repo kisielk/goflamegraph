@@ -6,18 +6,22 @@ import (
 	"strings"
 )
 
-func foldStack(s Stack) string {
+func foldStack(s Stack, includeSource bool) string {
 	calls := make([]string, len(s.Calls))
 	for i, c := range s.Calls {
-		calls[i] = c.Source + "`" + c.Func
+		call := c.Func
+		if includeSource {
+			call = c.Source + "`" + c.Func
+		}
+		calls[i] = call
 	}
 	return strings.Join(calls, ";")
 }
 
-func FoldStacks(stacks []*Stack) []string {
+func FoldStacks(stacks []*Stack, includeSource bool) []string {
 	counts := make(map[string]int)
 	for _, s := range stacks {
-		folded := foldStack(*s)
+		folded := foldStack(*s, includeSource)
 		counts[folded]++
 	}
 

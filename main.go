@@ -1,11 +1,15 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"github.com/kisielk/goflamegraph/flamegraph"
 	"log"
 	"os"
+
+	"github.com/kisielk/goflamegraph/flamegraph"
 )
+
+var includeSource = flag.Bool("s", false, "Show source paths")
 
 func main() {
 	stacks, err := flamegraph.ParseStacks(os.Stdin)
@@ -13,7 +17,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	for _, line := range flamegraph.FoldStacks(stacks) {
+	for _, line := range flamegraph.FoldStacks(stacks, *includeSource) {
 		fmt.Println(line)
 	}
 }
